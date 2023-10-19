@@ -1,0 +1,2 @@
+void OtaSetup();
+void OtaLoop();
