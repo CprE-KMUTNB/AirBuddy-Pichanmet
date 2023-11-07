@@ -1,0 +1,1150 @@
+[
+    {
+        "id": "64c0f4982b5ba581",
+        "type": "tab",
+        "label": "Main",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "4bc09661e2acc4e0",
+        "type": "websocket in",
+        "z": "64c0f4982b5ba581",
+        "name": "Data",
+        "server": "",
+        "client": "b99358b3e2190b4f",
+        "x": 1130,
+        "y": 320,
+        "wires": [
+            [
+                "7caf0b2588c2eb5b"
+            ]
+        ]
+    },
+    {
+        "id": "7caf0b2588c2eb5b",
+        "type": "function",
+        "z": "64c0f4982b5ba581",
+        "name": "Mediator",
+        "func": "if (msg.payload?.key) {\n    const data = flow.get(\"data\");\n    flow.set(\"last_data\", JSON.parse(JSON.stringify((data))));\n    data[msg.payload.key].value = msg.payload.value;\n    if (msg.payload.key === \"mode\") {\n        if (msg.payload.value === 0) {\n            for (let key in data) {\n                if (key !== \"mode\" && key !== \"protocol\") {\n                    data[key].enabled = false;\n                }\n            }\n        } else if (msg.payload.value === 1) {\n            for (let key in data) {\n                if (key !== \"mode\" && key !== \"protocol\") {\n                    if (key === \"swingh\") {\n                        data[key].enabled = !data[\"autoSwingh\"].value;\n                    } else if (key === \"swingv\") {\n                        data[key].enabled = !data[\"autoSwingv\"].value;\n                    } else if (key === \"timer\" || key === \"scheduler\" || key === \"threshold\" || key === \"duration\") {\n                        data[key].enabled = false;\n                    } else {\n                        data[key].enabled = true;\n                    }\n                }\n            }\n        } else if (msg.payload.value === 2) {\n            for (let key in data) {\n                if (key !== \"mode\" && key !== \"protocol\") {\n                    if (key === \"swingh\") {\n                        data[key].enabled = !data[\"autoSwingh\"].value;\n                    } else if (key === \"swingv\") {\n                        data[key].enabled = !data[\"autoSwingv\"].value;\n                    } else {\n                        data[key].enabled = true;\n                    }\n                }\n            }\n        }\n    } else if (msg.payload.key === \"autoSwingv\") {\n        data[\"swingv\"].enabled = !msg.payload.value;\n    } else if (msg.payload.key === \"autoSwingh\") {\n        data[\"swingh\"].enabled = !msg.payload.value;\n    } else if (msg.payload.key === \"duration\") {\n        if (data.timer.value === 0) {\n            data.duration.value = 0;\n        }\n    }\n    flow.set(\"data\", data);\n    const key = msg.payload.key;\n    msg.payload = data;\n    msg.payload.changed = key;\n    return msg;\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "const data = {\n    protocol: {\n        enabled: true,\n        value: 0\n    },\n    mode: {\n        enabled: true,\n        value: -1\n    },\n    degrees: {\n        enabled: true,\n        value: -1\n    },\n    currentTemperature: {\n        enabled: true,\n        value: 25\n    },\n    fanspeed: {\n        enabled: true,\n        value: -1\n    },\n    swingv: {\n        enabled: true,\n        value: -1\n    },\n    swingh: {\n        enabled: true,\n        value: -1\n    },\n    autoSwingv: {\n        enabled: true,\n        value: false\n    },\n    autoSwingh: {\n        enabled: true,\n        value: false\n    },\n    timer: {\n        enabled: true,\n        value: 0\n    },\n    scheduler: {\n        enabled: true,\n        value: false\n    },\n    threshold: {\n        enabled: true,\n        value: -1\n    },\n    power: {\n        enabled: true,\n        value: false\n    },\n    countdown: {\n        enabled: true,\n        value: false\n    },\n    duration: {\n        enabled: true,\n        value: 0\n    }\n};\n\nflow.set(\"data\", data);\nflow.set(\"last_data\", data);",
+        "finalize": "",
+        "libs": [],
+        "x": 1140,
+        "y": 400,
+        "wires": [
+            [
+                "940785374aa16542",
+                "6c68b29df8abc4c0"
+            ]
+        ]
+    },
+    {
+        "id": "af4c606b03bc2211",
+        "type": "ui_text",
+        "z": "64c0f4982b5ba581",
+        "group": "a762d7454fcbfb7b",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Protocol",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 520,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "9535089567e2c98d",
+        "type": "ui_dropdown",
+        "z": "64c0f4982b5ba581",
+        "name": "",
+        "label": "Mode",
+        "tooltip": "",
+        "place": "Select option",
+        "group": "a762d7454fcbfb7b",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "multiple": false,
+        "options": [
+            {
+                "label": "OFF",
+                "value": 0,
+                "type": "num"
+            },
+            {
+                "label": "ON",
+                "value": 1,
+                "type": "num"
+            },
+            {
+                "label": "AUTO",
+                "value": 2,
+                "type": "num"
+            }
+        ],
+        "payload": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "className": "",
+        "x": 510,
+        "y": 260,
+        "wires": [
+            [
+                "bebd9590d7709e47"
+            ]
+        ]
+    },
+    {
+        "id": "7007aa265e67b0be",
+        "type": "ui_slider",
+        "z": "64c0f4982b5ba581",
+        "name": "",
+        "label": "Temperature",
+        "tooltip": "",
+        "group": "a762d7454fcbfb7b",
+        "order": 4,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "outs": "end",
+        "topic": "topic",
+        "topicType": "msg",
+        "min": "18",
+        "max": "40",
+        "step": 1,
+        "className": "",
+        "x": 530,
+        "y": 300,
+        "wires": [
+            [
+                "bd8e8be148e86e7c"
+            ]
+        ]
+    },
+    {
+        "id": "4d8313448ea0de6d",
+        "type": "ui_text",
+        "z": "64c0f4982b5ba581",
+        "group": "a762d7454fcbfb7b",
+        "order": 5,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Current Temperature",
+        "format": "{{msg.payload}} °C",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 560,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "a99adee43ab63e36",
+        "type": "ui_slider",
+        "z": "64c0f4982b5ba581",
+        "name": "",
+        "label": "Swing X",
+        "tooltip": "",
+        "group": "a762d7454fcbfb7b",
+        "order": 12,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "outs": "end",
+        "topic": "topic",
+        "topicType": "msg",
+        "min": "1",
+        "max": "5",
+        "step": 1,
+        "className": "",
+        "x": 520,
+        "y": 660,
+        "wires": [
+            [
+                "214266c7864a37a3"
+            ]
+        ]
+    },
+    {
+        "id": "de45fec1df69d04a",
+        "type": "ui_slider",
+        "z": "64c0f4982b5ba581",
+        "name": "",
+        "label": "Swing Y",
+        "tooltip": "",
+        "group": "a762d7454fcbfb7b",
+        "order": 13,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "outs": "end",
+        "topic": "topic",
+        "topicType": "msg",
+        "min": "1",
+        "max": "5",
+        "step": 1,
+        "className": "",
+        "x": 520,
+        "y": 700,
+        "wires": [
+            [
+                "1e267510e4a6c8bf"
+            ]
+        ]
+    },
+    {
+        "id": "552b5051116e65d0",
+        "type": "ui_switch",
+        "z": "64c0f4982b5ba581",
+        "name": "",
+        "label": "Auto Swing X",
+        "tooltip": "",
+        "group": "a762d7454fcbfb7b",
+        "order": 15,
+        "width": 3,
+        "height": 1,
+        "passthru": false,
+        "decouple": "true",
+        "topic": "topic",
+        "topicType": "msg",
+        "style": "",
+        "onvalue": "true",
+        "onvalueType": "bool",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "false",
+        "offvalueType": "bool",
+        "officon": "",
+        "offcolor": "",
+        "animate": false,
+        "className": "",
+        "x": 540,
+        "y": 740,
+        "wires": [
+            [
+                "9358fe70cbe7edbe"
+            ]
+        ]
+    },
+    {
+        "id": "bba1b2744c9c16d4",
+        "type": "ui_switch",
+        "z": "64c0f4982b5ba581",
+        "name": "",
+        "label": "Auto Swing Y",
+        "tooltip": "",
+        "group": "a762d7454fcbfb7b",
+        "order": 14,
+        "width": 3,
+        "height": 1,
+        "passthru": false,
+        "decouple": "true",
+        "topic": "topic",
+        "topicType": "msg",
+        "style": "",
+        "onvalue": "true",
+        "onvalueType": "bool",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "false",
+        "offvalueType": "bool",
+        "officon": "",
+        "offcolor": "",
+        "animate": false,
+        "className": "",
+        "x": 540,
+        "y": 780,
+        "wires": [
+            [
+                "3faf73d7cf78f623"
+            ]
+        ]
+    },
+    {
+        "id": "bc44a4a6c498f876",
+        "type": "function",
+        "z": "64c0f4982b5ba581",
+        "name": "Flattener",
+        "func": "const list = [\"UNUSED\", \"RC5\", \"RC6\", \"NEC\", \"SONY\", \"PANASONIC\", \"JVC\", \"SAMSUNG\", \"WHYNTER\", \"AIWA_RC_T501\", \"LG\", \"SANYO\", \"MITSUBISHI\", \"DISH\", \"SHARP\", \"COOLIX\", \"DAIKIN\", \"DENON\", \"KELVINATOR\", \"SHERWOOD\", \"MITSUBISHI_AC\", \"RCMM\", \"SANYO_LC7461\", \"RC5X\", \"GREE\", \"PRONTO\", \"NEC_LIKE\", \"ARGO\", \"TROTEC\", \"NIKAI\", \"RAW\", \"GLOBALCACHE\", \"TOSHIBA_AC\", \"FUJITSU_AC\", \"MIDEA\", \"MAGIQUEST\", \"LASERTAG\", \"CARRIER_AC\", \"HAIER_AC\", \"MITSUBISHI2\", \"HITACHI_AC\", \"HITACHI_AC1\", \"HITACHI_AC2\", \"GICABLE\", \"HAIER_AC_YRW02\", \"WHIRLPOOL_AC\", \"SAMSUNG_AC\", \"LUTRON\", \"ELECTRA_AC\", \"PANASONIC_AC\", \"PIONEER\", \"LG2\", \"MWM\", \"DAIKIN2\", \"VESTEL_AC\", \"TECO\", \"SAMSUNG36\", \"TCL112AC\", \"LEGOPF\", \"MITSUBISHI_HEAVY_88\", \"MITSUBISHI_HEAVY_152\", \"DAIKIN216\", \"SHARP_AC\", \"GOODWEATHER\", \"INAX\", \"DAIKIN160\", \"NEOCLIMA\", \"DAIKIN176\", \"DAIKIN128\", \"AMCOR\", \"DAIKIN152\", \"MITSUBISHI136\", \"MITSUBISHI112\", \"HITACHI_AC424\", \"SONY_38K\", \"EPSON\", \"SYMPHONY\", \"HITACHI_AC3\", \"DAIKIN64\", \"AIRWELL\", \"DELONGHI_AC\", \"DOSHISHA\", \"MULTIBRACKETS\", \"CARRIER_AC40\", \"CARRIER_AC64\", \"HITACHI_AC344\", \"CORONA_AC\", \"MIDEA24\", \"ZEPEAL\", \"SANYO_AC\", \"VOLTAS\", \"METZ\", \"TRANSCOLD\", \"TECHNIBEL_AC\", \"MIRAGE\", \"ELITESCREENS\", \"PANASONIC_AC32\", \"MILESTAG2\", \"ECOCLIM\", \"XMP\", \"TRUMA\", \"HAIER_AC176\", \"TEKNOPOINT\", \"KELON\", \"TROTEC_3550\", \"SANYO_AC88\", \"BOSE\", \"ARRIS\", \"RHOSS\", \"AIRTON\", \"COOLIX48\", \"HITACHI_AC264\", \"KELON168\", \"HITACHI_AC296\", \"DAIKIN200\", \"HAIER_AC160\", \"CARRIER_AC128\", \"TOTO\", \"CLIMABUTLER\", \"TCL96AC\", \"BOSCH144\", \"SANYO_AC152\", \"DAIKIN312\", \"GORENJE\", \"WOWWEE\", \"CARRIER_AC84\"];\nmsg.enabled = msg.payload.enabled;\nmsg.payload = msg.payload.value;\nif (msg.key === \"protocol\") {\n    msg.payload = list[msg.payload];\n} else if (msg.key === \"power\") {\n    msg.payload = msg.payload ? \"ON\" : \"OFF\";\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 120,
+        "y": 420,
+        "wires": [
+            [
+                "974ebec3e8e731fb"
+            ]
+        ]
+    },
+    {
+        "id": "974ebec3e8e731fb",
+        "type": "switch",
+        "z": "64c0f4982b5ba581",
+        "name": "",
+        "property": "key",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "protocol",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "mode",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "degrees",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "currentTemperature",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "power",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "duration",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "scheduler",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "threshold",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "timer",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "fanspeed",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "swingh",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "swingv",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "autoSwingh",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "autoSwingv",
+                "vt": "str"
+            }
+        ],
+        "checkall": "false",
+        "repair": false,
+        "outputs": 14,
+        "x": 270,
+        "y": 420,
+        "wires": [
+            [
+                "af4c606b03bc2211"
+            ],
+            [
+                "9535089567e2c98d"
+            ],
+            [
+                "7007aa265e67b0be"
+            ],
+            [
+                "4d8313448ea0de6d"
+            ],
+            [],
+            [
+                "842dbb004493db0b"
+            ],
+            [
+                "6926a049dbdc4b44"
+            ],
+            [
+                "cf57eec769c88994"
+            ],
+            [
+                "69d35a8354e04ef5"
+            ],
+            [
+                "0de962b997b645bc"
+            ],
+            [
+                "a99adee43ab63e36"
+            ],
+            [
+                "de45fec1df69d04a"
+            ],
+            [
+                "552b5051116e65d0"
+            ],
+            [
+                "bba1b2744c9c16d4"
+            ]
+        ]
+    },
+    {
+        "id": "0de962b997b645bc",
+        "type": "ui_dropdown",
+        "z": "64c0f4982b5ba581",
+        "name": "",
+        "label": "Fan Speed",
+        "tooltip": "",
+        "place": "Select option",
+        "group": "a762d7454fcbfb7b",
+        "order": 11,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "multiple": false,
+        "options": [
+            {
+                "label": "AUTO",
+                "value": 0,
+                "type": "num"
+            },
+            {
+                "label": "MIN",
+                "value": 1,
+                "type": "num"
+            },
+            {
+                "label": "LOW",
+                "value": 2,
+                "type": "num"
+            },
+            {
+                "label": "MEDIUM",
+                "value": 3,
+                "type": "num"
+            },
+            {
+                "label": "MEDIUM HIGH",
+                "value": "6",
+                "type": "str"
+            },
+            {
+                "label": "HIGH",
+                "value": 4,
+                "type": "num"
+            },
+            {
+                "label": "MAX",
+                "value": "5",
+                "type": "str"
+            }
+        ],
+        "payload": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "className": "",
+        "x": 530,
+        "y": 620,
+        "wires": [
+            [
+                "8acbe04152308574"
+            ]
+        ]
+    },
+    {
+        "id": "bebd9590d7709e47",
+        "type": "function",
+        "z": "64c0f4982b5ba581",
+        "name": "Mode",
+        "func": "const message = {payload: {}};\nmessage.payload.value = msg.payload;\nmessage.payload.key = \"mode\";\nreturn message;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 730,
+        "y": 260,
+        "wires": [
+            [
+                "7caf0b2588c2eb5b"
+            ]
+        ]
+    },
+    {
+        "id": "bd8e8be148e86e7c",
+        "type": "function",
+        "z": "64c0f4982b5ba581",
+        "name": "Temperature",
+        "func": "const message = {payload: {}};\nmessage.payload.value = msg.payload;\nmessage.payload.key = \"degrees\";\nreturn message;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 750,
+        "y": 300,
+        "wires": [
+            [
+                "7caf0b2588c2eb5b"
+            ]
+        ]
+    },
+    {
+        "id": "8acbe04152308574",
+        "type": "function",
+        "z": "64c0f4982b5ba581",
+        "name": "Fan Speed",
+        "func": "const message = {payload: {}};\nmessage.payload.value = msg.payload;\nmessage.payload.key = \"fanspeed\";\nreturn message;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 750,
+        "y": 620,
+        "wires": [
+            [
+                "7caf0b2588c2eb5b"
+            ]
+        ]
+    },
+    {
+        "id": "214266c7864a37a3",
+        "type": "function",
+        "z": "64c0f4982b5ba581",
+        "name": "Swing X",
+        "func": "const message = {payload: {}};\nmessage.payload.value = msg.payload;\nmessage.payload.key = \"swingh\";\nreturn message;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 660,
+        "wires": [
+            [
+                "7caf0b2588c2eb5b"
+            ]
+        ]
+    },
+    {
+        "id": "1e267510e4a6c8bf",
+        "type": "function",
+        "z": "64c0f4982b5ba581",
+        "name": "Swing Y",
+        "func": "const message = {payload: {}};\nmessage.payload.value = msg.payload;\nmessage.payload.key = \"swingv\";\nreturn message;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 700,
+        "wires": [
+            [
+                "7caf0b2588c2eb5b"
+            ]
+        ]
+    },
+    {
+        "id": "9358fe70cbe7edbe",
+        "type": "function",
+        "z": "64c0f4982b5ba581",
+        "name": "Auto Swing X",
+        "func": "const message = {payload: {}};\nmessage.payload.value = msg.payload;\nmessage.payload.key = \"autoSwingh\";\nreturn message;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 760,
+        "y": 740,
+        "wires": [
+            [
+                "7caf0b2588c2eb5b"
+            ]
+        ]
+    },
+    {
+        "id": "3faf73d7cf78f623",
+        "type": "function",
+        "z": "64c0f4982b5ba581",
+        "name": "Auto Swing Y",
+        "func": "const message = {payload: {}};\nmessage.payload.value = msg.payload;\nmessage.payload.key = \"autoSwingv\";\nreturn message;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 760,
+        "y": 780,
+        "wires": [
+            [
+                "7caf0b2588c2eb5b"
+            ]
+        ]
+    },
+    {
+        "id": "eb2453425543e0da",
+        "type": "function",
+        "z": "64c0f4982b5ba581",
+        "name": "Timer",
+        "func": "const message = {payload: {}};\nconst timerMessage = {};\nmessage.payload.value = msg.payload;\nmessage.payload.key = \"timer\";\ntimerMessage.payload = message.payload.value * 3600;\nreturn [message, timerMessage];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 730,
+        "y": 540,
+        "wires": [
+            [
+                "7caf0b2588c2eb5b"
+            ],
+            [
+                "dbdc364b602c62a4"
+            ]
+        ]
+    },
+    {
+        "id": "940785374aa16542",
+        "type": "function",
+        "z": "64c0f4982b5ba581",
+        "name": "Control Center",
+        "func": "const message = { payload: { type: \"command\", value: {} } }\nconst timer = {}\nconst prevState = flow.get(\"last_data\");\nif (msg.payload.changed === \"duration\") {\n    return\n}\nif (msg.payload.changed === \"countdown\" && msg.payload.countdown.value === prevState.countdown.value) {\n    return\n}\nmessage.payload.value.protocol = msg.payload.protocol.value;\nif (msg.payload.mode.value === 0) {\n    message.payload.value.power = false;\n    timer.payload = false;\n} else if (msg.payload.mode.value === 1) {\n    message.payload.value.power = true;\n    timer.payload = false;\n} else {\n    if (msg.payload.countdown.value === false) {\n        if (msg.payload.scheduler.value === true) {\n            message.payload.value.power = true;\n        } else if (msg.payload.currentTemperature.value > msg.payload.threshold.value) {\n            message.payload.value.power = msg.payload.timer.value > 0;\n            timer.payload = msg.payload.timer.value > 0;\n        } else {\n            message.payload.value.power = false;\n        }\n    } else {\n        if (msg.payload.scheduler.value === true) {\n            message.payload.value.power = true;\n        }\n        else if (msg.payload.changed === \"timer\") {\n            message.payload.value.power = msg.payload.timer.value > 0;\n            timer.payload = msg.payload.timer.value > 0;\n        } else {\n            message.payload.value.power = true;\n        }\n    }\n}\nmessage.payload.value.degrees = msg.payload.degrees.value;\nmessage.payload.value.fanspeed = msg.payload.fanspeed.value;\nif (msg.payload.autoSwingh.value) {\n    message.payload.value.swingh = 0;\n} else {\n    message.payload.value.swingh = msg.payload.swingh.value;\n}\nif (msg.payload.autoSwingv.value) {\n    message.payload.value.swingv = 0;\n} else {\n    message.payload.value.swingv = msg.payload.swingv.value;\n}\nmessage.payload.value.econo = false;\nmessage.payload.value.turbo = false;\nreturn [message, timer];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1340,
+        "y": 400,
+        "wires": [
+            [
+                "99284c3424ba964a"
+            ],
+            [
+                "dbdc364b602c62a4"
+            ]
+        ]
+    },
+    {
+        "id": "a8e8e2f0c2d1d6c3",
+        "type": "websocket out",
+        "z": "64c0f4982b5ba581",
+        "name": "Data",
+        "server": "",
+        "client": "b99358b3e2190b4f",
+        "x": 1730,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "6926a049dbdc4b44",
+        "type": "ui_time_scheduler",
+        "z": "64c0f4982b5ba581",
+        "group": "a762d7454fcbfb7b",
+        "name": "",
+        "startDay": 0,
+        "refresh": 60,
+        "devices": [
+            "Scheduler"
+        ],
+        "singleOff": false,
+        "onlySendChange": true,
+        "customPayload": false,
+        "eventMode": false,
+        "eventOptions": [],
+        "sendTopic": false,
+        "lat": "",
+        "lon": "",
+        "customContextStore": "",
+        "outputs": 2,
+        "order": 7,
+        "width": 6,
+        "height": 1,
+        "x": 530,
+        "y": 440,
+        "wires": [
+            [],
+            [
+                "8aceceb212870423"
+            ]
+        ]
+    },
+    {
+        "id": "8aceceb212870423",
+        "type": "function",
+        "z": "64c0f4982b5ba581",
+        "name": "Scheduler",
+        "func": "const message = {payload: {}};\nmessage.payload.value = msg.payload;\nmessage.payload.key = \"scheduler\";\nreturn message;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 440,
+        "wires": [
+            [
+                "7caf0b2588c2eb5b"
+            ]
+        ]
+    },
+    {
+        "id": "16c3fd5e5f030cc3",
+        "type": "ui_text",
+        "z": "64c0f4982b5ba581",
+        "group": "a762d7454fcbfb7b",
+        "order": 10,
+        "width": 6,
+        "height": 1,
+        "name": "",
+        "label": "--Air Conditioner Setting--",
+        "format": "",
+        "layout": "col-center",
+        "className": "",
+        "style": true,
+        "font": "",
+        "fontSize": "16",
+        "color": "#000000",
+        "x": 570,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "69d35a8354e04ef5",
+        "type": "ui_slider",
+        "z": "64c0f4982b5ba581",
+        "name": "",
+        "label": "Timer",
+        "tooltip": "",
+        "group": "a762d7454fcbfb7b",
+        "order": 9,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "outs": "end",
+        "topic": "topic",
+        "topicType": "msg",
+        "min": 0,
+        "max": "5",
+        "step": 1,
+        "className": "",
+        "x": 510,
+        "y": 540,
+        "wires": [
+            [
+                "eb2453425543e0da"
+            ]
+        ]
+    },
+    {
+        "id": "cf57eec769c88994",
+        "type": "ui_slider",
+        "z": "64c0f4982b5ba581",
+        "name": "",
+        "label": "Threshold",
+        "tooltip": "",
+        "group": "a762d7454fcbfb7b",
+        "order": 8,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "outs": "end",
+        "topic": "topic",
+        "topicType": "msg",
+        "min": "20",
+        "max": "50",
+        "step": 1,
+        "className": "",
+        "x": 520,
+        "y": 500,
+        "wires": [
+            [
+                "7ee34a4040624355"
+            ]
+        ]
+    },
+    {
+        "id": "7ee34a4040624355",
+        "type": "function",
+        "z": "64c0f4982b5ba581",
+        "name": "Threshold",
+        "func": "const message = {payload: {}};\nmessage.payload.value = msg.payload;\nmessage.payload.key = \"threshold\";\nreturn message;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 500,
+        "wires": [
+            [
+                "7caf0b2588c2eb5b"
+            ]
+        ]
+    },
+    {
+        "id": "ee6e2bcac9a10444",
+        "type": "ui_text",
+        "z": "64c0f4982b5ba581",
+        "group": "a762d7454fcbfb7b",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Current Status",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 1760,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "dbdc364b602c62a4",
+        "type": "timer-node",
+        "z": "64c0f4982b5ba581",
+        "name": "",
+        "topic": "",
+        "timer": "0",
+        "payloadOn": "{\"key\": \"countdown\", \"value\": true}",
+        "payloadOnType": "json",
+        "payloadOff": "{\"key\": \"countdown\", \"value\": false}",
+        "payloadOffType": "json",
+        "x": 1330,
+        "y": 500,
+        "wires": [
+            [
+                "7caf0b2588c2eb5b"
+            ],
+            [
+                "c7f56d417387a609"
+            ]
+        ]
+    },
+    {
+        "id": "842dbb004493db0b",
+        "type": "ui_text",
+        "z": "64c0f4982b5ba581",
+        "group": "a762d7454fcbfb7b",
+        "order": 6,
+        "width": 0,
+        "height": 0,
+        "name": "Duration",
+        "label": "Turn off in",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 520,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "c7f56d417387a609",
+        "type": "function",
+        "z": "64c0f4982b5ba581",
+        "name": "Countdown",
+        "func": "const message = { payload: {} };\nmessage.payload.value = msg.payload;\nmessage.payload.key = \"duration\";\nreturn message;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1330,
+        "y": 640,
+        "wires": [
+            [
+                "7caf0b2588c2eb5b"
+            ]
+        ]
+    },
+    {
+        "id": "e52c1728a6181b73",
+        "type": "split",
+        "z": "64c0f4982b5ba581",
+        "name": "",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "key",
+        "x": 110,
+        "y": 140,
+        "wires": [
+            [
+                "bc44a4a6c498f876"
+            ]
+        ]
+    },
+    {
+        "id": "6c68b29df8abc4c0",
+        "type": "function",
+        "z": "64c0f4982b5ba581",
+        "name": "Delta",
+        "func": "const prevData = flow.get(\"last_data\");\nfor (let key in msg.payload) {\n    if (key === \"changed\") continue;\n    else if (prevData[key].value === msg.payload[key].value &&\n        prevData[key].enabled === msg.payload[key].enabled) {\n        delete msg.payload[key];\n    }\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1310,
+        "y": 100,
+        "wires": [
+            [
+                "e52c1728a6181b73"
+            ]
+        ]
+    },
+    {
+        "id": "99284c3424ba964a",
+        "type": "rbe",
+        "z": "64c0f4982b5ba581",
+        "name": "",
+        "func": "rbe",
+        "gap": "",
+        "start": "",
+        "inout": "out",
+        "septopics": false,
+        "property": "payload",
+        "topi": "topic",
+        "x": 1550,
+        "y": 400,
+        "wires": [
+            [
+                "a8e8e2f0c2d1d6c3",
+                "2b07b662bbe48e72",
+                "7258b77c8cd9e53b"
+            ]
+        ]
+    },
+    {
+        "id": "2b07b662bbe48e72",
+        "type": "debug",
+        "z": "64c0f4982b5ba581",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1740,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "7258b77c8cd9e53b",
+        "type": "function",
+        "z": "64c0f4982b5ba581",
+        "name": "Current Status",
+        "func": "msg.payload = msg.payload.value.power ? \"ON\" : \"OFF\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1760,
+        "y": 460,
+        "wires": [
+            [
+                "ee6e2bcac9a10444"
+            ]
+        ]
+    },
+    {
+        "id": "a68b28feaacfe6e7",
+        "type": "mqtt in",
+        "z": "64c0f4982b5ba581",
+        "name": "",
+        "topic": "zigbee/temperature_sensor",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "ef8ebdd2b55a3378",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 170,
+        "y": 60,
+        "wires": [
+            [
+                "d5f19a4f2a410151"
+            ]
+        ]
+    },
+    {
+        "id": "1a96bebda1de26c2",
+        "type": "debug",
+        "z": "64c0f4982b5ba581",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 720,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "d5f19a4f2a410151",
+        "type": "function",
+        "z": "64c0f4982b5ba581",
+        "name": "Current Temperature",
+        "func": "msg.payload.key = \"currentTemperature\"\nmsg.payload.value = msg.payload.temperature\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 520,
+        "y": 60,
+        "wires": [
+            [
+                "1a96bebda1de26c2",
+                "7caf0b2588c2eb5b"
+            ]
+        ]
+    },
+    {
+        "id": "b99358b3e2190b4f",
+        "type": "websocket-client",
+        "path": "wss://linux-vm-southeastasia-1.southeastasia.cloudapp.azure.com:8080/",
+        "tls": "18ecb06ef39c48b6",
+        "wholemsg": "true",
+        "hb": "30",
+        "subprotocol": ""
+    },
+    {
+        "id": "a762d7454fcbfb7b",
+        "type": "ui_group",
+        "name": "Aircon Gaming",
+        "tab": "3909519ebec234db",
+        "order": 1,
+        "disp": true,
+        "width": 6,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "ef8ebdd2b55a3378",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "linux-vm-southeastasia-1.southeastasia.cloudapp.azure.com",
+        "port": "8883",
+        "tls": "18ecb06ef39c48b6",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": true,
+        "protocolVersion": "5",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "18ecb06ef39c48b6",
+        "type": "tls-config",
+        "name": "",
+        "cert": "",
+        "key": "",
+        "ca": "",
+        "certname": "",
+        "keyname": "",
+        "caname": "",
+        "servername": "",
+        "verifyservercert": true,
+        "alpnprotocol": ""
+    },
+    {
+        "id": "3909519ebec234db",
+        "type": "ui_tab",
+        "name": "Aircon Gaming",
+        "icon": "dashboard",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    }
+]

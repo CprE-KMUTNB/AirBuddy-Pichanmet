@@ -48,8 +48,8 @@ const uint16_t CAPTURE_BUFFER_SIZE PROGMEM = 1024;
 const uint8_t CAPTURE_TIMEOUT PROGMEM = 50;              // This is the gap timeout
 const uint8_t TOLERANCE_PERCENTAGE PROGMEM = kTolerance; // kTolerance is normally 25%
 
-const char *SSID PROGMEM = "XDDD";
-const char *PASSWORD PROGMEM = "XDDD";
+const char *SSID PROGMEM = "SSID";
+const char *PASSWORD PROGMEM = "PASSWORD";
 const char *WEBSOCKET_SERVER PROGMEM = "linux-vm-southeastasia-1.southeastasia.cloudapp.azure.com";
 const int WEBSOCKET_PORT PROGMEM = 8080;
 const int MQTT_PORT PROGMEM = 8883;
