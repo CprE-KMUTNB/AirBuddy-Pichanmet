@@ -2,6 +2,6 @@
     "sketch": "ESP32.ino",
     "configuration": "FlashFreq=80,PartitionScheme=default,CPUFreq=240,UploadSpeed=921600,DebugLevel=none,EraseFlash=none",
     "board": "esp32:esp32:lolin32-lite",
-    "port": "COM4",
-    "output": ".build"
+    "port": "COM15",
+    "output": "build"
 }

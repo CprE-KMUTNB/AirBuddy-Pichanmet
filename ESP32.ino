@@ -1,12 +1,14 @@
+#include <Arduino.h>
 #include <ArduinoJson.h>
 #include <IRremoteESP8266.h>
-#include <IRac.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <IRrecv.h>
 #include <IRutils.h>
-#include "OTA.hpp"
+#include <WebSocketsClient.h>
+#include "AC.hpp"
+#include "Type.cpp"
 
 const char *ca PROGMEM = R"(-----BEGIN CERTIFICATE-----
 MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
@@ -46,40 +48,35 @@ const uint16_t CAPTURE_BUFFER_SIZE PROGMEM = 1024;
 const uint8_t CAPTURE_TIMEOUT PROGMEM = 50;              // This is the gap timeout
 const uint8_t TOLERANCE_PERCENTAGE PROGMEM = kTolerance; // kTolerance is normally 25%
 
-const char *SSID PROGMEM = "MR200_2.4GHz";
-const char *PASSWORD PROGMEM = "wifi@mr200";
-const char *MQTT_BROKER PROGMEM = "linux-vm-southeastasia-1.southeastasia.cloudapp.azure.com";
+const char *SSID PROGMEM = "XDDD";
+const char *PASSWORD PROGMEM = "XDDD";
+const char *WEBSOCKET_SERVER PROGMEM = "linux-vm-southeastasia-1.southeastasia.cloudapp.azure.com";
+const int WEBSOCKET_PORT PROGMEM = 8080;
 const int MQTT_PORT PROGMEM = 8883;
-const char *MQTT_USER PROGMEM = "esp32";
-const char *MQTT_PASSWORD PROGMEM = "esp32gaming";
-const char *MQTT_TOPIC PROGMEM = "test";
-const char *MQTT_COMMAND_TOPIC PROGMEM = "command";
-const char *MQTT_MODEL_TOPIC PROGMEM = "model";
 
 decode_type_t protocol = decode_type_t::UNKNOWN;
-decode_results results; // Somewhere to store the results
+decode_results results;
 
-IRac ac(IR_SEND_PIN); // Create a A/C object using GPIO to sending messages with.
+AC ac(IR_SEND_PIN);
 IRrecv irrecv(IR_RECEIVE_PIN, CAPTURE_BUFFER_SIZE, CAPTURE_TIMEOUT, true);
 
 WiFiClientSecure wificlient;
-PubSubClient mqttClient(wificlient);
+WebSocketsClient webSocket;
 
-DynamicJsonDocument jsonDocument(1024);
+void handlePing();
+void handleCommand(DynamicJsonDocument);
+void handleIncomingText(uint8_t*);
 
 void setup()
 {
-  Serial.begin(500000);
+  Serial.begin(921600);
   delay(1000);
   wificlient.setCACert(ca);
   connectWiFi();
-  mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
-  mqttClient.setCallback(callback);
-  connectMQTT();
-  mqttClient.subscribe(MQTT_MODEL_TOPIC);
-  initAc();
   irrecv.setTolerance(TOLERANCE_PERCENTAGE);
   irrecv.enableIRIn();
+  webSocket.beginSSL(WEBSOCKET_SERVER, WEBSOCKET_PORT, "/model");
+  webSocket.onEvent(webSocketEvent);
 }
 
 void loop()
@@ -88,12 +85,6 @@ void loop()
   {
     Serial.println("WiFi connection lost. Attempting to reconnect.");
     WiFi.reconnect();
-    connectWiFi();
-  }
-  else if (!mqttClient.connected())
-  {
-    Serial.println("MQTT connection lost. Attempting to reconnect.");
-    connectMQTT();
   }
   else
   {
@@ -105,78 +96,42 @@ void loop()
         String output;
         protocol = results.decode_type;
         StaticJsonDocument<256> jsonDocument;
-        jsonDocument["model"] = (int)protocol;
+        jsonDocument["type"] = TYPE_PROTOCAL;
+        jsonDocument["value"]["model"] = (int)protocol;
         serializeJson(jsonDocument, output);
-        mqttClient.publish(MQTT_MODEL_TOPIC, output.c_str());
+        webSocket.sendTXT(output);
       }
     }
-    if (protocol != decode_type_t::UNKNOWN)
-    {
-      ac.next.protocol = protocol;
-      ac.next.power = false;
-      Serial.println(ac.sendAc());
-    }
-    mqttClient.loop();
+    webSocket.loop();
   }
 }
 
-void initAc()
+void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
 {
-  ac.next.model = 1;                              // Some A/Cs have different models. Try just the first.
-  ac.next.mode = stdAc::opmode_t::kCool;          // Run in cool mode initially.
-  ac.next.celsius = true;                         // Use Celsius for temp units. False = Fahrenheit
-  ac.next.degrees = 25;                           // 25 degrees.
-  ac.next.fanspeed = stdAc::fanspeed_t::kMedium;  // Start the fan at medium.
-  ac.next.swingv = stdAc::swingv_t::kUpperMiddle; // Don't swing the fan up or down.
-  ac.next.swingh = stdAc::swingh_t::kOff;         // Don't swing the fan left or right.
-  ac.next.light = false;                          // Turn off any LED/Lights/Display that we can.
-  ac.next.beep = false;                           // Turn off any beep from the A/C if we can.
-  ac.next.econo = false;                          // Turn off any economy modes if we can.
-  ac.next.filter = false;                         // Turn off any Ion/Mold/Health filters if we can.
-  ac.next.turbo = false;                          // Don't use any turbo/powerful/etc modes.
-  ac.next.quiet = false;                          // Don't use any quiet/silent/etc modes.
-  ac.next.sleep = -1;                             // Don't set any sleep time or modes.
-  ac.next.clean = false;                          // Turn off any Cleaning options if we can.
-  ac.next.clock = -1;                             // Don't set any current time if we can avoid it.
-  ac.next.power = false;
-}
-
-bool sendAc(bool power, int model, int mode, int degrees, int fanspeed, int swingv, int swingh, bool econo, bool turbo)
-{
-  ac.next.power = power;
-  ac.next.model = model;                          // Some A/Cs have different models. Try just the first.
-  ac.next.mode = (stdAc::opmode_t)mode;           // Run in cool mode initially.
-  ac.next.degrees = degrees;                      // 25 degrees.
-  ac.next.fanspeed = (stdAc::fanspeed_t)fanspeed; // Start the fan at medium.
-  ac.next.swingv = (stdAc::swingv_t)swingv;       // Don't swing the fan up or down.
-  ac.next.swingh = (stdAc::swingh_t)swingh;       // Don't swing the fan left or right.
-  ac.next.econo = econo;                          // Turn off any economy modes if we can.
-  ac.next.turbo = turbo;                          // Don't use any turbo/powerful/etc modes.
-  return ac.sendAc();
-}
-
-void callback(char *topic, byte *payload, unsigned int length)
-{
-  if (strcmp(topic, MQTT_COMMAND_TOPIC) == 0)
+  switch (type)
   {
-    DeserializationError error = deserializeJson(jsonDocument, payload);
-    if (error)
-    {
-      Serial.print("Deserialization failed: ");
-      Serial.println(error.c_str());
-      return;
-    }
-    int model = jsonDocument["model"];
-    int mode = jsonDocument["mode"];
-    int degrees = jsonDocument["degrees"];
-    int fanspeed = jsonDocument["fanspeed"];
-    int swingv = jsonDocument["swingv"];
-    int swingh = jsonDocument["swingh"];
-    bool econo = jsonDocument["econo"];
-    bool turbo = jsonDocument["turbo"];
-    bool power = jsonDocument["power"];
-    sendAc(power, model, mode, degrees, fanspeed, swingv, swingh, econo, turbo);
-    Serial.println("AC sent");
+  case WStype_DISCONNECTED:
+    Serial.printf("[WSc] Disconnected!\n");
+    break;
+  case WStype_CONNECTED:
+  {
+    Serial.printf("[WSc] Connected to url: %s\n", payload);
+    webSocket.sendTXT("{ \"type\": \"status\", \"value\": { \"status\": 1 } }");
+  }
+  break;
+  case WStype_TEXT:
+    Serial.printf("[WSc] get text: %s\n", payload);
+    handleIncomingText(payload);
+    break;
+  case WStype_BIN:
+    Serial.printf("[WSc] get binary length: %u\n", length);
+    break;
+  case WStype_ERROR:
+  case WStype_FRAGMENT_TEXT_START:
+  case WStype_FRAGMENT_BIN_START:
+  case WStype_FRAGMENT:
+  case WStype_FRAGMENT_FIN:
+    break;
   }
 }
 
@@ -201,21 +156,34 @@ bool isWiFiConnected()
   return WiFi.status() == WL_CONNECTED;
 }
 
-void connectMQTT()
+void handlePing()
 {
-  while (!mqttClient.connected())
-  {
-    String client_id = "esp32-client-";
-    client_id += String(WiFi.macAddress());
-    if (mqttClient.connect(client_id.c_str(), MQTT_USER, MQTT_PASSWORD))
+  webSocket.sendTXT("{\"type\":\"pong\"}");
+}
+
+void handleCommand(DynamicJsonDocument jsonDocument)
+{
+  int protocol = jsonDocument["protocol"];
+  bool power = jsonDocument["power"];
+  int mode = (int)stdAc::opmode_t::kCool;
+  int degrees = jsonDocument["degrees"];
+  int fanspeed = jsonDocument["fanspeed"];
+  int swingv = jsonDocument["swingv"];
+  int swingh = jsonDocument["swingh"];
+  bool econo = jsonDocument["econo"];
+  bool turbo = jsonDocument["turbo"];
+  ac.sendAc(power, protocol, mode, degrees, fanspeed, swingv, swingh, econo, turbo);
+}
+
+void handleIncomingText(uint8_t* payload) {
+   DynamicJsonDocument jsonDocument(1024);
+    deserializeJson(jsonDocument, payload);
+    if (jsonDocument["type"] = TYPE_PING)
     {
-      Serial.println("MQTT broker connected");
+      handlePing();
     }
-    else
+    else if (jsonDocument["type"] = TYPE_COMMAND)
     {
-      Serial.print("failed with state ");
-      Serial.println(mqttClient.state());
-      delay(1000);
+      handleCommand(jsonDocument["type"]);
     }
-  }
 }
