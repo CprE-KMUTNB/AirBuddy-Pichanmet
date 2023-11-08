@@ -45,7 +45,7 @@ mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d
 emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 -----END CERTIFICATE-----)";
 // Pin configurations for IR communication
-const uint16_t IR_RECEIVE_PIN PROGMEM = 34; // The ESP GPIO pin to use that controls the IR LED.
+const uint16_t IR_RECEIVE_PIN PROGMEM = 13; // The ESP GPIO pin to use that controls the IR LED.
 const uint16_t IR_SEND_PIN PROGMEM = 32;    // The ESP GPIO pin to use that controls the IR LED.
 const uint16_t CAPTURE_BUFFER_SIZE PROGMEM = 1024;
 const uint8_t CAPTURE_TIMEOUT PROGMEM = 50;              // This is the gap timeout
@@ -80,7 +80,7 @@ void setup()
   connectWiFi();  // Connect to the WiFi network
   irrecv.setTolerance(TOLERANCE_PERCENTAGE);  // Set the tolerance for IR signals
   irrecv.enableIRIn();  // Enable IR receiver
-  webSocket.beginSSL(WEBSOCKET_SERVER, WEBSOCKET_PORT, "/model");  // Set up WebSocket client
+  webSocket.beginSSL(WEBSOCKET_SERVER, WEBSOCKET_PORT, "/");  // Set up WebSocket client
   webSocket.onEvent(webSocketEvent);  // Register event handler for WebSocket events
 }
 
